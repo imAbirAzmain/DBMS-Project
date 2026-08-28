@@ -1,7 +1,7 @@
 <?php
 /**
- * Shared top navigation. The logout destination can be adjusted by a page
- * through $rootBase when the application gets a central router.
+ * Worker portal top navigation. This mirrors the admin header pattern while
+ * exposing a worker-specific user identity and portal actions.
  */
 $rootBase = isset($rootBase) && is_string($rootBase) ? $rootBase : '../';
 ?>
@@ -20,7 +20,7 @@ $rootBase = isset($rootBase) && is_string($rootBase) ? $rootBase : '../';
             </button>
 
             <div class="navbar-project">
-                <p class="navbar-kicker">Operations workspace</p>
+                <p class="navbar-kicker">Worker operations</p>
                 <span class="navbar-title">Texwear Ltd</span>
             </div>
         </div>
@@ -34,7 +34,7 @@ $rootBase = isset($rootBase) && is_string($rootBase) ? $rootBase : '../';
                 <button
                     class="navbar-icon-button notification-button"
                     type="button"
-                    id="notificationMenu"
+                    id="workerNotificationMenu"
                     data-bs-toggle="dropdown"
                     aria-expanded="false"
                     aria-label="View notifications"
@@ -43,31 +43,31 @@ $rootBase = isset($rootBase) && is_string($rootBase) ? $rootBase : '../';
                     <span class="notification-count">3</span>
                 </button>
 
-                <div class="dropdown-menu dropdown-menu-end notification-menu" aria-labelledby="notificationMenu">
+                <div class="dropdown-menu dropdown-menu-end notification-menu" aria-labelledby="workerNotificationMenu">
                     <div class="notification-menu__heading">
                         <span>Notifications</span>
                         <small>3 new</small>
                     </div>
-                    <a class="notification-item" href="<?= htmlspecialchars($rootBase, ENT_QUOTES, 'UTF-8'); ?>pages/production.php">
+                    <a class="notification-item" href="<?= htmlspecialchars($rootBase, ENT_QUOTES, 'UTF-8'); ?>pages/worker_tasks.php">
                         <span class="notification-item__icon notification-item__icon--warning"><i class="bi bi-exclamation-triangle"></i></span>
-                        <span><strong>Printing stage needs review</strong><small>Production progress is below target.</small></span>
+                        <span><strong>New task assigned</strong><small>Binding and finishing task updated for ORD-2026-015.</small></span>
                     </a>
-                    <a class="notification-item" href="<?= htmlspecialchars($rootBase, ENT_QUOTES, 'UTF-8'); ?>pages/payments.php">
-                        <span class="notification-item__icon notification-item__icon--primary"><i class="bi bi-credit-card"></i></span>
-                        <span><strong>Four payments remain pending</strong><small>Outstanding balance: ৳865,000.</small></span>
+                    <a class="notification-item" href="<?= htmlspecialchars($rootBase, ENT_QUOTES, 'UTF-8'); ?>pages/worker_production.php">
+                        <span class="notification-item__icon notification-item__icon--primary"><i class="bi bi-diagram-3"></i></span>
+                        <span><strong>Target increased</strong><small>Daily sewing target moved from 120 to 150 units.</small></span>
                     </a>
-                    <a class="notification-item" href="<?= htmlspecialchars($rootBase, ENT_QUOTES, 'UTF-8'); ?>pages/shipment.php">
-                        <span class="notification-item__icon notification-item__icon--success"><i class="bi bi-truck"></i></span>
-                        <span><strong>Shipment #2 is scheduled</strong><small>Expected delivery to Germany: 19 Aug.</small></span>
+                    <a class="notification-item" href="<?= htmlspecialchars($rootBase, ENT_QUOTES, 'UTF-8'); ?>pages/worker_attendance.php">
+                        <span class="notification-item__icon notification-item__icon--success"><i class="bi bi-calendar-check"></i></span>
+                        <span><strong>Shift updated</strong><small>Evening shift begins at 2:00 PM today.</small></span>
                     </a>
                 </div>
             </div>
 
-            <div class="navbar-user" aria-label="Logged in user">
+            <div class="navbar-user" aria-label="Logged in worker">
                 <span class="user-avatar">RA</span>
                 <span class="navbar-user__details">
                     <strong>Rahim Ahmed</strong>
-                    <small>Factory Admin</small>
+                    <small>Sewing Operator</small>
                 </span>
             </div>
 

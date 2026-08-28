@@ -29,10 +29,10 @@ $sidebarItems = [
 ?>
 <aside class="app-sidebar" id="appSidebar" aria-label="Primary navigation">
     <div class="sidebar-brand">
-        <a class="sidebar-brand__link" href="<?= htmlspecialchars($pageBase, ENT_QUOTES, 'UTF-8'); ?>dashboard.php" aria-label="Garments Management System dashboard">
+        <a class="sidebar-brand__link" href="<?= htmlspecialchars($pageBase, ENT_QUOTES, 'UTF-8'); ?>dashboard.php" aria-label="Texwear Ltd dashboard">
             <span class="sidebar-brand__mark"><i class="bi bi-scissors" aria-hidden="true"></i></span>
             <span>
-                <strong>GarmentFlow</strong>
+                <strong>Texwear Ltd</strong>
                 <small>Factory operations</small>
             </span>
         </a>
