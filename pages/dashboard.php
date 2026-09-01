@@ -1,9 +1,18 @@
 <?php
-/**
- * Dashboard frontend prototype.
- * All values are deliberately local dummy data based on the project schema
- * and its supplied demo records. No database connection is used here.
- */
+require_once __DIR__ . '/../config/auth.php';
+
+garments_session_start_safe();
+$user = garments_current_user();
+if (!$user) {
+    header('Location: ../login.php');
+    exit;
+}
+
+if (strtolower((string) ($user['role'] ?? '')) !== 'incharge') {
+    header('Location: ../login.php?error=unauthorized');
+    exit;
+}
+
 $pageTitle = 'Dashboard';
 $activePage = 'dashboard';
 $assetBase = '../assets/';
@@ -15,13 +24,45 @@ $escape = function ($value) {
 };
 
 $dashboardMetrics = [
-    ['label' => 'Total Orders', 'value' => '6', 'detail' => '6 orders recorded for August', 'icon' => 'bi-clipboard2-check', 'tone' => 'primary'],
-    ['label' => 'Workers', 'value' => '3', 'detail' => '2 active across production', 'icon' => 'bi-people', 'tone' => 'indigo'],
-    ['label' => 'Production Stages', 'value' => '6', 'detail' => '2 completed, 1 in progress', 'icon' => 'bi-diagram-3', 'tone' => 'teal'],
-    ['label' => 'Suppliers', 'value' => '6', 'detail' => 'All supplier records active', 'icon' => 'bi-truck-flatbed', 'tone' => 'orange'],
-    ['label' => 'Buyers', 'value' => '6', 'detail' => 'Across six export destinations', 'icon' => 'bi-building', 'tone' => 'purple'],
-    ['label' => 'Pending Payments', 'value' => '৳865K', 'detail' => 'Across four outstanding payments', 'icon' => 'bi-credit-card', 'tone' => 'rose'],
+    ['label' => 'Total Orders', 'value' => '0', 'detail' => 'Loading from Oracle...', 'icon' => 'bi-clipboard2-check', 'tone' => 'primary'],
+    ['label' => 'Workers', 'value' => '0', 'detail' => 'Loading from Oracle...', 'icon' => 'bi-people', 'tone' => 'indigo'],
+    ['label' => 'Production Stages', 'value' => '0', 'detail' => 'Loading from Oracle...', 'icon' => 'bi-diagram-3', 'tone' => 'teal'],
+    ['label' => 'Suppliers', 'value' => '0', 'detail' => 'Loading from Oracle...', 'icon' => 'bi-truck-flatbed', 'tone' => 'orange'],
+    ['label' => 'Buyers', 'value' => '0', 'detail' => 'Loading from Oracle...', 'icon' => 'bi-building', 'tone' => 'purple'],
+    ['label' => 'Pending Payments', 'value' => '0', 'detail' => 'Loading from Oracle...', 'icon' => 'bi-credit-card', 'tone' => 'rose'],
 ];
+
+$conn = garments_db_connect();
+if ($conn) {
+    $queries = [
+        'orders' => 'SELECT COUNT(*) AS total FROM Orders',
+        'workers' => 'SELECT COUNT(*) AS total FROM Worker',
+        'stages' => 'SELECT COUNT(*) AS total FROM Production_Stage',
+        'suppliers' => 'SELECT COUNT(*) AS total FROM Supplier',
+        'buyers' => 'SELECT COUNT(*) AS total FROM Buyer',
+        'payments' => "SELECT COUNT(*) AS total FROM Payment WHERE Remaining_Amount > 0"
+    ];
+
+    foreach ($queries as $key => $sql) {
+        $stmt = oci_parse($conn, $sql);
+        oci_execute($stmt);
+        $row = oci_fetch_assoc($stmt);
+        if ($row) {
+            $value = (int) ($row['TOTAL'] ?? 0);
+            if ($key === 'payments') {
+                $dashboardMetrics[5]['value'] = '₹' . number_format($value, 0);
+                $dashboardMetrics[5]['detail'] = 'Pending payment records';
+            } else {
+                $idx = ['orders' => 0, 'workers' => 1, 'stages' => 2, 'suppliers' => 3, 'buyers' => 4][$key];
+                $dashboardMetrics[$idx]['value'] = (string) $value;
+                $dashboardMetrics[$idx]['detail'] = 'Live count from Oracle';
+            }
+        }
+        oci_free_statement($stmt);
+    }
+
+    oci_close($conn);
+}
 
 $recentOrders = [
     ['id' => '#6', 'buyer' => 'Tokyo Fashion', 'description' => '700 Sweatshirts', 'orderDate' => '06 Aug 2026', 'deliveryDate' => '22 Aug 2026', 'status' => 'In production', 'statusClass' => 'primary'],

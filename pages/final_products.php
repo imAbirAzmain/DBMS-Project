@@ -196,7 +196,7 @@ require_once __DIR__ . '/../includes/navbar.php';
 <div class="modal fade" id="addFinalProductModal" tabindex="-1" aria-labelledby="addFinalProductModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content app-modal">
-            <form data-final-products-form>
+<form data-final-products-form data-backend-resource="final_product">
                 <div class="modal-header">
                     <div>
                         <p class="section-eyebrow">Inventory management</p>

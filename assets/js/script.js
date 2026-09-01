@@ -1,10 +1,76 @@
 document.addEventListener('DOMContentLoaded', function () {
     /* --- Shared Functions --- */
 
-    const toastElement = document.getElementById('prototypeToast');
-    const showPrototypeToast = function (message) {
+    /* Server-backed module forms. The legacy UI handlers below are retained for
+       view-only controls; this capture handler sends actual form submissions. */
+    document.addEventListener('submit', async function (event) {
+        const form = event.target;
+        const resource = form && form.dataset ? form.dataset.backendResource : '';
+        if (!resource) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopImmediatePropagation();
+
+        const csrf = document.querySelector('meta[name="garments-csrf-token"]')?.content;
+        if (!csrf) {
+            showAppToast('Your session has expired. Please refresh the page.', 'error');
+            return;
+        }
+
+        const payload = new FormData(form);
+        payload.set('resource', resource);
+        payload.set('csrf_token', csrf);
+
+        const submitButton = form.querySelector('[type="submit"]');
+        const originalButtonText = submitButton ? submitButton.innerHTML : '';
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.classList.add('is-loading');
+            submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span><span class="ms-1">Saving...</span>';
+        }
+
+        try {
+            const response = await fetch('../actions.php', {
+                method: 'POST',
+                body: payload,
+                credentials: 'same-origin',
+                headers: { 'Accept': 'application/json' }
+            });
+            const result = await response.json();
+            if (!response.ok || !result.ok) {
+                throw new Error(result.error || 'The record could not be saved.');
+            }
+            showAppToast(result.message || 'Saved successfully.', 'success');
+            window.setTimeout(function () { window.location.reload(); }, 450);
+        } catch (error) {
+            const resultTarget = form.dataset.responseTarget;
+            const resultElement = resultTarget ? document.querySelector(resultTarget) : null;
+            if (resultElement) {
+                resultElement.className = 'alert alert-danger mt-3 mb-0';
+                resultElement.textContent = error.message || 'The record could not be saved.';
+                resultElement.hidden = false;
+            } else {
+                showAppToast(error.message || 'The record could not be saved.', 'error');
+            }
+        } finally {
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.classList.remove('is-loading');
+                submitButton.innerHTML = originalButtonText;
+            }
+        }
+    }, true);
+
+    const toastElement = document.getElementById('appToast') || document.getElementById('prototypeToast');
+    const showAppToast = function (message, type) {
         if (!toastElement || !window.bootstrap) {
             return;
+        }
+        toastElement.classList.remove('is-success', 'is-error');
+        if (type === 'success' || type === 'error') {
+            toastElement.classList.add('is-' + type);
         }
         const messageElement = toastElement.querySelector('[data-toast-message]');
         if (messageElement) {
@@ -12,6 +78,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         window.bootstrap.Toast.getOrCreateInstance(toastElement).show();
     };
+    const showPrototypeToast = function (message) { showAppToast(message, 'info'); };
 
     /* --- Shared responsive sidebar controls --- */
 
@@ -838,7 +905,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             } else if (materialsBreakdownContainer) {
                 materialsBreakdownContainer.textContent = 'No material breakdown available.';
-            });
+            }
 
             const statusElement = viewBomModal.querySelector('[data-bom-detail="status"]');
 

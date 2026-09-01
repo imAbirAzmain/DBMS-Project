@@ -1,11 +1,33 @@
 <?php
+require_once __DIR__ . '/config/auth.php';
+
 $role = $_GET['role'] ?? 'incharge';
 $normalizedRole = in_array($role, ['incharge', 'worker'], true) ? $role : 'incharge';
+$loginError = isset($_GET['error']) && $_GET['error'] === 'invalid';
+$loginUnauthorized = isset($_GET['error']) && $_GET['error'] === 'unauthorized';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $identity = trim((string) ($_POST['identity'] ?? ''));
+    $password = (string) ($_POST['password'] ?? '');
+    $requestedRole = trim((string) ($_POST['role'] ?? $normalizedRole));
+    $user = garments_authenticate_employee($identity, $password, $requestedRole);
+
+    if ($user) {
+        garments_login_user($user);
+        $redirect = strtolower($requestedRole) === 'worker' ? 'pages/worker_dashboard.php' : 'pages/dashboard.php';
+        header('Location: ' . $redirect);
+        exit;
+    }
+
+    header('Location: login.php?role=' . urlencode($requestedRole) . '&error=invalid');
+    exit;
+}
+
 $pageTitle = $normalizedRole === 'worker' ? 'Worker Login' : 'Incharge Login';
 $assetBase = 'assets/';
 $brandName = 'Texwear Ltd';
-$identityLabel = $normalizedRole === 'worker' ? 'Employee ID' : 'Username';
-$identityPlaceholder = $normalizedRole === 'worker' ? 'e.g. WRK-001' : 'e.g. rahim_ahmed';
+$identityLabel = $normalizedRole === 'worker' ? 'Employee ID' : 'Employee ID';
+$identityPlaceholder = $normalizedRole === 'worker' ? 'e.g. 201' : 'e.g. 101';
 ?>
 <!doctype html>
 <html lang="en">
@@ -47,7 +69,7 @@ $identityPlaceholder = $normalizedRole === 'worker' ? 'e.g. WRK-001' : 'e.g. rah
                 <h2><?= $normalizedRole === 'worker' ? 'Worker portal' : 'Incharge portal'; ?></h2>
             </div>
 
-            <form id="authForm" class="auth-form" novalidate>
+            <form id="authForm" class="auth-form" method="post" action="login.php" novalidate>
                 <div class="mb-3">
                     <label for="identity" class="form-label"><?= htmlspecialchars($identityLabel, ENT_QUOTES, 'UTF-8'); ?></label>
                     <input type="text" class="form-control" id="identity" name="identity" placeholder="<?= htmlspecialchars($identityPlaceholder, ENT_QUOTES, 'UTF-8'); ?>" required>
@@ -61,7 +83,7 @@ $identityPlaceholder = $normalizedRole === 'worker' ? 'e.g. WRK-001' : 'e.g. rah
                     </button>
                 </div>
 
-                <input type="hidden" id="portalRole" value="<?= htmlspecialchars($normalizedRole, ENT_QUOTES, 'UTF-8'); ?>">
+                <input type="hidden" id="portalRole" name="role" value="<?= htmlspecialchars($normalizedRole, ENT_QUOTES, 'UTF-8'); ?>">
 
                 <div class="auth-form__meta">
                     <label class="check-inline">
@@ -71,23 +93,23 @@ $identityPlaceholder = $normalizedRole === 'worker' ? 'e.g. WRK-001' : 'e.g. rah
                     <a href="#">Forgot password?</a>
                 </div>
 
-                <div class="login-error" id="loginError" hidden>
+                <div class="login-error" id="loginError" <?= $loginError || $loginUnauthorized ? '' : 'hidden'; ?>>
                     <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
-                    <span>Invalid credentials. Please try again.</span>
+                    <span><?= $loginUnauthorized ? 'You do not have access to this portal.' : 'Invalid credentials. Please try again.'; ?></span>
                 </div>
 
                 <button type="submit" class="btn btn-primary w-100 login-button">Sign in</button>
             </form>
 
             <div class="demo-box">
-                <p>Demo credentials</p>
+                <p>Oracle-backed sample credentials</p>
                 <div class="demo-box__row">
-                    <span><?= $normalizedRole === 'worker' ? 'Worker ID' : 'Username'; ?></span>
-                    <strong><?= $normalizedRole === 'worker' ? 'WRK-001' : 'rahim_ahmed'; ?></strong>
+                    <span><?= $normalizedRole === 'worker' ? 'Worker ID' : 'Incharge ID'; ?></span>
+                    <strong><?= $normalizedRole === 'worker' ? '201' : '101'; ?></strong>
                 </div>
                 <div class="demo-box__row">
                     <span>Password</span>
-                    <strong><?= $normalizedRole === 'worker' ? 'worker123' : '1234'; ?></strong>
+                    <strong><?= $normalizedRole === 'worker' ? 'pass201' : 'pass101'; ?></strong>
                 </div>
             </div>
         </section>
@@ -97,11 +119,7 @@ $identityPlaceholder = $normalizedRole === 'worker' ? 'e.g. WRK-001' : 'e.g. rah
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const form = document.getElementById('authForm');
-            const roleField = document.getElementById('portalRole');
-            const identityField = document.getElementById('identity');
             const passwordField = document.getElementById('password');
-            const loginError = document.getElementById('loginError');
             const passwordToggle = document.querySelector('.password-toggle');
 
             if (passwordToggle && passwordField) {
@@ -111,32 +129,6 @@ $identityPlaceholder = $normalizedRole === 'worker' ? 'e.g. WRK-001' : 'e.g. rah
                     const icon = passwordToggle.querySelector('i');
                     icon.classList.toggle('bi-eye');
                     icon.classList.toggle('bi-eye-slash');
-                });
-            }
-
-            if (form) {
-                form.addEventListener('submit', function (event) {
-                    event.preventDefault();
-                    loginError.hidden = true;
-
-                    const role = roleField ? roleField.value : 'incharge';
-                    const identity = identityField ? identityField.value.trim() : '';
-                    const password = passwordField ? passwordField.value : '';
-
-                    const isWorkerMatch = role === 'worker' && identity === 'WRK-001' && password === 'worker123';
-                    const isInchargeMatch = role === 'incharge' && identity === 'rahim_ahmed' && password === '1234';
-
-                    if (isWorkerMatch) {
-                        window.location.href = 'pages/worker_dashboard.php';
-                        return;
-                    }
-
-                    if (isInchargeMatch) {
-                        window.location.href = 'pages/dashboard.php';
-                        return;
-                    }
-
-                    loginError.hidden = false;
                 });
             }
         });

@@ -192,7 +192,7 @@ require_once __DIR__ . '/../includes/navbar.php';
 <div class="modal fade" id="addInchargeModal" tabindex="-1" aria-labelledby="addInchargeModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content app-modal">
-            <form data-incharges-form>
+<form data-incharges-form data-backend-resource="incharge">
                 <div class="modal-header">
                     <div>
                         <p class="section-eyebrow">Employee management</p>

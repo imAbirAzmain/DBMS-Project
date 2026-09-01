@@ -199,7 +199,7 @@ require_once __DIR__ . '/../includes/navbar.php';
 <div class="modal fade" id="addPackagingModal" tabindex="-1" aria-labelledby="addPackagingModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content app-modal">
-            <form data-packaging-form>
+<form data-packaging-form data-backend-resource="packaging">
                 <div class="modal-header">
                     <div>
                         <p class="section-eyebrow">Packaging & Shipment</p>

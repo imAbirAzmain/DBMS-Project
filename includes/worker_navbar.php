@@ -4,6 +4,8 @@
  * exposing a worker-specific user identity and portal actions.
  */
 $rootBase = isset($rootBase) && is_string($rootBase) ? $rootBase : '../';
+$navbarUserName = $garmentsUserName ?? 'Worker';
+$navbarUserInitials = $garmentsUserInitials ?? 'W';
 ?>
 <div class="app-content">
     <header class="app-navbar">
@@ -64,10 +66,10 @@ $rootBase = isset($rootBase) && is_string($rootBase) ? $rootBase : '../';
             </div>
 
             <div class="navbar-user" aria-label="Logged in worker">
-                <span class="user-avatar">RA</span>
+                <span class="user-avatar" aria-hidden="true"><?= htmlspecialchars($navbarUserInitials, ENT_QUOTES, 'UTF-8'); ?></span>
                 <span class="navbar-user__details">
-                    <strong>Rahim Ahmed</strong>
-                    <small>Sewing Operator</small>
+                    <strong><?= htmlspecialchars($navbarUserName, ENT_QUOTES, 'UTF-8'); ?></strong>
+                    <small>Worker portal</small>
                 </span>
             </div>
 

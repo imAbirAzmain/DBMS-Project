@@ -1,8 +1,12 @@
 <?php
-/**
- * Production Stages frontend prototype.
- * All values are local dummy data based on the supplied schema and demo data.
- */
+require_once __DIR__ . '/../config/auth.php';
+
+garments_session_start_safe();
+if (!garments_current_user()) {
+    header('Location: ../login.php');
+    exit;
+}
+
 $pageTitle = 'Production Stages';
 $activePage = 'production';
 $assetBase = '../assets/';
@@ -14,10 +18,10 @@ $escape = function ($value) {
 };
 
 $productionMetrics = [
-    ['label' => 'Total Stages', 'value' => '6', 'detail' => 'All defined production stages', 'icon' => 'bi-diagram-3', 'tone' => 'primary'],
-    ['label' => 'In Progress', 'value' => '2', 'detail' => 'Stages currently active', 'icon' => 'bi-hourglass-split', 'tone' => 'warning'],
-    ['label' => 'Completed', 'value' => '3', 'detail' => 'Stages finished this month', 'icon' => 'bi-check2-circle', 'tone' => 'success'],
-    ['label' => 'Assigned Workers', 'value' => '53', 'detail' => 'Total workers across all stages', 'icon' => 'bi-people', 'tone' => 'indigo'],
+    ['label' => 'Total Stages', 'value' => '0', 'detail' => 'All defined production stages', 'icon' => 'bi-diagram-3', 'tone' => 'primary'],
+    ['label' => 'In Progress', 'value' => '0', 'detail' => 'Stages currently active', 'icon' => 'bi-hourglass-split', 'tone' => 'warning'],
+    ['label' => 'Completed', 'value' => '0', 'detail' => 'Stages finished this month', 'icon' => 'bi-check2-circle', 'tone' => 'success'],
+    ['label' => 'Assigned Workers', 'value' => '0', 'detail' => 'Total workers across all stages', 'icon' => 'bi-people', 'tone' => 'indigo'],
 ];
 
 $productionStages = [
@@ -52,6 +56,82 @@ $productionStages = [
         'incharge' => 'Rahim Ahmed', 'inchargeId' => '101', 'machine' => 'Inspection Table', 'machineId' => 'M006',
     ],
 ];
+
+$conn = garments_db_connect();
+if ($conn) {
+    $productionMetrics[0]['value'] = (string) (int) ((garments_db_fetch_one('SELECT COUNT(*) AS total FROM Production_Stage')['TOTAL'] ?? 0));
+    $productionMetrics[1]['value'] = (string) (int) ((garments_db_fetch_one("SELECT COUNT(*) AS total FROM Production_Stage WHERE Stage_Progress = 'In Progress'")['TOTAL'] ?? 0));
+    $productionMetrics[2]['value'] = (string) (int) ((garments_db_fetch_one("SELECT COUNT(*) AS total FROM Production_Stage WHERE Stage_Progress = 'Completed'")['TOTAL'] ?? 0));
+    $productionMetrics[3]['value'] = (string) (int) ((garments_db_fetch_one('SELECT COUNT(*) AS total FROM Rel_Worker_ProductionStage')['TOTAL'] ?? 0));
+
+    $stageSql = "
+        SELECT
+            ps.Stage_ID AS id,
+            ps.Stage_Name AS name,
+            ps.Stage_Progress AS progress_text,
+            NVL(ps.Assigned_Workers, 0) AS assigned_workers,
+            TO_CHAR(ps.Start_Date, 'DD Mon YYYY') AS start_date,
+            TO_CHAR(ps.End_Date, 'DD Mon YYYY') AS end_date,
+            CASE
+                WHEN ps.Stage_Progress = 'Completed' THEN 'Completed'
+                WHEN ps.Stage_Progress = 'In Progress' THEN 'In Progress'
+                WHEN ps.Stage_Progress = 'Pending' THEN 'Pending'
+                ELSE 'Needs Attention'
+            END AS status,
+            CASE
+                WHEN ps.Stage_Progress = 'Completed' THEN 'completed'
+                WHEN ps.Stage_Progress = 'In Progress' THEN 'in-progress'
+                WHEN ps.Stage_Progress = 'Pending' THEN 'pending'
+                ELSE 'needs-attention'
+            END AS status_key,
+            CASE
+                WHEN ps.Stage_Progress = 'Completed' THEN 'success'
+                WHEN ps.Stage_Progress = 'In Progress' THEN 'primary'
+                WHEN ps.Stage_Progress = 'Pending' THEN 'muted'
+                ELSE 'warning'
+            END AS status_class,
+            i.Name AS incharge,
+            i.Employee_ID AS incharge_id,
+            m.Name AS machine
+        FROM Production_Stage ps
+        LEFT JOIN Rel_Inch_Worker_Stage riwps ON riwps.Stage_ID = ps.Stage_ID
+        LEFT JOIN Incharge i ON i.Employee_ID = riwps.Incharge_ID
+        LEFT JOIN Rel_ProductionStage_Machinery rsm ON rsm.Stage_ID = ps.Stage_ID
+        LEFT JOIN Machinery m ON m.Machine_ID = rsm.Machine_ID
+        GROUP BY ps.Stage_ID, ps.Stage_Name, ps.Stage_Progress, ps.Assigned_Workers,
+                 ps.Start_Date, ps.End_Date, i.Name, i.Employee_ID, m.Name
+        ORDER BY ps.Stage_ID
+    ";
+
+    $dbStages = garments_db_fetch_all($stageSql);
+    if (!empty($dbStages)) {
+        $productionStages = [];
+        foreach ($dbStages as $row) {
+            $progress = (string) ($row['PROGRESS_TEXT'] ?? '0%');
+            $progressValue = 0;
+            if (preg_match('/(\d+)/', $progress, $matches)) {
+                $progressValue = (int) $matches[1];
+            }
+            $status = (string) ($row['STATUS'] ?? 'Pending');
+            $productionStages[] = [
+                'id' => (string) ($row['ID'] ?? ''),
+                'name' => (string) ($row['NAME'] ?? ''),
+                'progress' => $progressValue . '%',
+                'progressValue' => $progressValue,
+                'assignedWorkers' => (string) ($row['ASSIGNED_WORKERS'] ?? '0'),
+                'startDate' => (string) ($row['START_DATE'] ?? 'N/A'),
+                'endDate' => (string) ($row['END_DATE'] ?? 'N/A'),
+                'status' => $status,
+                'statusKey' => (string) ($row['STATUS_KEY'] ?? 'pending'),
+                'statusClass' => (string) ($row['STATUS_CLASS'] ?? 'muted'),
+                'incharge' => (string) ($row['INCHARGE'] ?? 'N/A'),
+                'inchargeId' => (string) ($row['INCHARGE_ID'] ?? 'N/A'),
+                'machine' => (string) ($row['MACHINE'] ?? 'N/A'),
+                'machineId' => 'N/A',
+            ];
+        }
+    }
+}
 
 require_once __DIR__ . '/../includes/header.php';
 require_once __DIR__ . '/../includes/sidebar.php';
@@ -219,7 +299,7 @@ require_once __DIR__ . '/../includes/navbar.php';
 <div class="modal fade" id="addProductionStageModal" tabindex="-1" aria-labelledby="addProductionStageModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content app-modal">
-            <form data-production-stage-form>
+<form data-production-stage-form data-backend-resource="production">
                 <div class="modal-header">
                     <div>
                         <p class="section-eyebrow">Production management</p>

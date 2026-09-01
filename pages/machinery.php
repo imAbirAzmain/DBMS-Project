@@ -216,7 +216,7 @@ require_once __DIR__ . '/../includes/navbar.php';
 <div class="modal fade" id="addMachineryModal" tabindex="-1" aria-labelledby="addMachineryModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content app-modal">
-            <form data-machinery-form>
+<form data-machinery-form data-backend-resource="machinery">
                 <div class="modal-header">
                     <div>
                         <p class="section-eyebrow">Asset management</p>

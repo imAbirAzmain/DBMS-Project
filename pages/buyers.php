@@ -1,9 +1,12 @@
 <?php
-/**
- * Buyers frontend prototype.
- * Static records are based on Buyer, Buyer_Contact, and linked order,
- * shipment, and payment relationships from the supplied schema.
- */
+require_once __DIR__ . '/../config/auth.php';
+
+garments_session_start_safe();
+if (!garments_current_user()) {
+    header('Location: ../login.php');
+    exit;
+}
+
 $pageTitle = 'Buyers';
 $activePage = 'buyers';
 $assetBase = '../assets/';
@@ -15,44 +18,97 @@ $escape = function ($value) {
 };
 
 $buyerMetrics = [
-    ['label' => 'Total Buyers', 'value' => '6', 'detail' => 'Buyer accounts in the order register', 'icon' => 'bi-building', 'tone' => 'primary'],
-    ['label' => 'Buyer Contacts', 'value' => '6', 'detail' => 'Registered multivalued contact numbers', 'icon' => 'bi-telephone', 'tone' => 'indigo'],
-    ['label' => 'Fully Paid', 'value' => '2', 'detail' => 'Buyer payments with no remaining amount', 'icon' => 'bi-check2-circle', 'tone' => 'teal'],
-    ['label' => 'Export Markets', 'value' => '6', 'detail' => 'Destinations linked through shipments', 'icon' => 'bi-globe2', 'tone' => 'purple'],
+    ['label' => 'Total Buyers', 'value' => '0', 'detail' => 'Buyer accounts in the order register', 'icon' => 'bi-building', 'tone' => 'primary'],
+    ['label' => 'Buyer Contacts', 'value' => '0', 'detail' => 'Registered multivalued contact numbers', 'icon' => 'bi-telephone', 'tone' => 'indigo'],
+    ['label' => 'Fully Paid', 'value' => '0', 'detail' => 'Buyer payments with no remaining amount', 'icon' => 'bi-check2-circle', 'tone' => 'teal'],
+    ['label' => 'Export Markets', 'value' => '0', 'detail' => 'Destinations linked through shipments', 'icon' => 'bi-globe2', 'tone' => 'purple'],
 ];
 
-$buyers = [
-    [
-        'id' => '1', 'name' => 'ABC Fashion', 'brand' => 'ABC Brand', 'initials' => 'AF', 'contact' => '+1 202 555 0101',
-        'email' => 'abc@brand.com', 'account' => 'ACC1001', 'address' => 'New York, USA', 'region' => 'americas',
-        'order' => '#1 · 1,000 Polo Shirts', 'shipment' => 'TRK100001 · USA', 'paymentStatus' => 'Partially Paid', 'paymentKey' => 'partial', 'statusClass' => 'warning',
-    ],
-    [
-        'id' => '2', 'name' => 'Global Wear', 'brand' => 'Global Wear', 'initials' => 'GW', 'contact' => '+49 30 1234 567',
-        'email' => 'global@wear.com', 'account' => 'ACC1002', 'address' => 'Berlin, Germany', 'region' => 'europe',
-        'order' => '#2 · 800 Hoodies', 'shipment' => 'TRK100002 · Germany', 'paymentStatus' => 'Paid', 'paymentKey' => 'paid', 'statusClass' => 'success',
-    ],
-    [
-        'id' => '3', 'name' => 'Urban Style', 'brand' => 'Urban Style', 'initials' => 'US', 'contact' => '+1 416 555 1234',
-        'email' => 'urban@style.com', 'account' => 'ACC1003', 'address' => 'Toronto, Canada', 'region' => 'americas',
-        'order' => '#3 · 1,500 T-Shirts', 'shipment' => 'TRK100003 · Canada', 'paymentStatus' => 'Partially Paid', 'paymentKey' => 'partial', 'statusClass' => 'warning',
-    ],
-    [
-        'id' => '4', 'name' => 'Classic Apparel', 'brand' => 'Classic Apparel', 'initials' => 'CA', 'contact' => '+44 20 7123 4567',
-        'email' => 'classic@apparel.com', 'account' => 'ACC1004', 'address' => 'London, UK', 'region' => 'europe',
-        'order' => '#4 · 500 Jackets', 'shipment' => 'TRK100004 · UK', 'paymentStatus' => 'Partially Paid', 'paymentKey' => 'partial', 'statusClass' => 'warning',
-    ],
-    [
-        'id' => '5', 'name' => 'Elite Clothing', 'brand' => 'Elite Clothing', 'initials' => 'EC', 'contact' => '+33 1 4012 3456',
-        'email' => 'elite@clothing.com', 'account' => 'ACC1005', 'address' => 'Paris, France', 'region' => 'europe',
-        'order' => '#5 · 1,200 Sports Jerseys', 'shipment' => 'TRK100005 · France', 'paymentStatus' => 'Paid', 'paymentKey' => 'paid', 'statusClass' => 'success',
-    ],
-    [
-        'id' => '6', 'name' => 'Tokyo Fashion', 'brand' => 'Tokyo Fashion', 'initials' => 'TF', 'contact' => '+81 3 1234 5678',
-        'email' => 'tokyo@fashion.com', 'account' => 'ACC1006', 'address' => 'Tokyo, Japan', 'region' => 'asia',
-        'order' => '#6 · 700 Sweatshirts', 'shipment' => 'TRK100006 · Japan', 'paymentStatus' => 'Partially Paid', 'paymentKey' => 'partial', 'statusClass' => 'warning',
-    ],
-];
+$buyers = [];
+$conn = garments_db_connect();
+if ($conn) {
+    $buyerMetrics[0]['value'] = (string) (int) ((garments_db_fetch_one('SELECT COUNT(*) AS total FROM Buyer')['TOTAL'] ?? 0));
+    $buyerMetrics[1]['value'] = (string) (int) ((garments_db_fetch_one('SELECT COUNT(*) AS total FROM Buyer_Contact')['TOTAL'] ?? 0));
+    $buyerMetrics[2]['value'] = (string) (int) ((garments_db_fetch_one("SELECT COUNT(*) AS total FROM Payment p JOIN Rel_Buyer_Payment rbp ON rbp.Payment_ID = p.Payment_ID WHERE p.Remaining_Amount = 0")['TOTAL'] ?? 0));
+    $buyerMetrics[3]['value'] = (string) (int) ((garments_db_fetch_one('SELECT COUNT(DISTINCT Destination) AS total FROM Shipment')['TOTAL'] ?? 0));
+
+    $buyerSql = "
+        SELECT
+            b.Buyer_ID AS id,
+            b.Name AS name,
+            b.Brand AS brand,
+            COALESCE((SELECT bc.Contact_Number FROM Buyer_Contact bc WHERE bc.Buyer_ID = b.Buyer_ID AND ROWNUM = 1), 'N/A') AS contact,
+            b.Email AS email,
+            b.Account_No AS account_no,
+            b.Address AS address,
+            o.Order_ID AS order_id,
+            o.Description AS order_description,
+            s.Tracking_Number AS tracking_number,
+            s.Destination AS destination,
+            CASE
+                WHEN p.Remaining_Amount IS NULL OR p.Remaining_Amount = 0 THEN 'Paid'
+                ELSE 'Partially Paid'
+            END AS payment_status,
+            CASE
+                WHEN p.Remaining_Amount IS NULL OR p.Remaining_Amount = 0 THEN 'paid'
+                ELSE 'partial'
+            END AS payment_key,
+            CASE
+                WHEN p.Remaining_Amount IS NULL OR p.Remaining_Amount = 0 THEN 'success'
+                ELSE 'warning'
+            END AS status_class
+        FROM Buyer b
+        LEFT JOIN Rel_Buyer_Order rbo ON rbo.Buyer_ID = b.Buyer_ID
+        LEFT JOIN Orders o ON o.Order_ID = rbo.Order_ID
+        LEFT JOIN Rel_Shipment_Buyer rsb ON rsb.Buyer_ID = b.Buyer_ID
+        LEFT JOIN Shipment s ON s.Shipment_ID = rsb.Shipment_ID
+        LEFT JOIN Rel_Buyer_Payment rbp ON rbp.Buyer_ID = b.Buyer_ID
+        LEFT JOIN Payment p ON p.Payment_ID = rbp.Payment_ID
+        ORDER BY b.Buyer_ID
+    ";
+
+    $dbBuyers = garments_db_fetch_all($buyerSql);
+    if (!empty($dbBuyers)) {
+        foreach ($dbBuyers as $row) {
+            $name = (string) ($row['NAME'] ?? '');
+            $initials = strtoupper(preg_replace('/[^A-Z]/i', '', substr($name, 0, 2) ?: 'B')) ?: 'B';
+            $region = strtolower((string) ($row['DESTINATION'] ?? ''));
+            $regionKey = 'asia';
+            if (stripos($region, 'us') !== false || stripos($region, 'canada') !== false || stripos($region, 'usa') !== false) {
+                $regionKey = 'americas';
+            } elseif (stripos($region, 'germany') !== false || stripos($region, 'france') !== false || stripos($region, 'uk') !== false || stripos($region, 'britain') !== false) {
+                $regionKey = 'europe';
+            }
+            $buyers[] = [
+                'id' => (string) ($row['ID'] ?? ''),
+                'name' => $name,
+                'brand' => (string) ($row['BRAND'] ?? $name),
+                'initials' => $initials,
+                'contact' => (string) ($row['CONTACT'] ?? 'N/A'),
+                'email' => (string) ($row['EMAIL'] ?? 'N/A'),
+                'account' => (string) ($row['ACCOUNT_NO'] ?? 'N/A'),
+                'address' => (string) ($row['ADDRESS'] ?? 'N/A'),
+                'region' => $regionKey,
+                'order' => (string) (($row['ORDER_ID'] ?? '') !== '' ? '#' . $row['ORDER_ID'] . ' · ' . ($row['ORDER_DESCRIPTION'] ?? 'Order') : 'N/A'),
+                'shipment' => (string) (($row['TRACKING_NUMBER'] ?? '') !== '' ? $row['TRACKING_NUMBER'] . ' · ' . ($row['DESTINATION'] ?? 'N/A') : 'N/A'),
+                'paymentStatus' => (string) ($row['PAYMENT_STATUS'] ?? 'Paid'),
+                'paymentKey' => (string) ($row['PAYMENT_KEY'] ?? 'paid'),
+                'statusClass' => (string) ($row['STATUS_CLASS'] ?? 'success'),
+            ];
+        }
+    }
+}
+
+if (empty($buyers)) {
+    $buyers = [
+        ['id' => '1', 'name' => 'ABC Fashion', 'brand' => 'ABC Brand', 'initials' => 'AF', 'contact' => '+1 202 555 0101', 'email' => 'abc@brand.com', 'account' => 'ACC1001', 'address' => 'New York, USA', 'region' => 'americas', 'order' => '#1 · 1,000 Polo Shirts', 'shipment' => 'TRK100001 · USA', 'paymentStatus' => 'Partially Paid', 'paymentKey' => 'partial', 'statusClass' => 'warning'],
+        ['id' => '2', 'name' => 'Global Wear', 'brand' => 'Global Wear', 'initials' => 'GW', 'contact' => '+49 30 1234 567', 'email' => 'global@wear.com', 'account' => 'ACC1002', 'address' => 'Berlin, Germany', 'region' => 'europe', 'order' => '#2 · 800 Hoodies', 'shipment' => 'TRK100002 · Germany', 'paymentStatus' => 'Paid', 'paymentKey' => 'paid', 'statusClass' => 'success'],
+        ['id' => '3', 'name' => 'Urban Style', 'brand' => 'Urban Style', 'initials' => 'US', 'contact' => '+1 416 555 1234', 'email' => 'urban@style.com', 'account' => 'ACC1003', 'address' => 'Toronto, Canada', 'region' => 'americas', 'order' => '#3 · 1,500 T-Shirts', 'shipment' => 'TRK100003 · Canada', 'paymentStatus' => 'Partially Paid', 'paymentKey' => 'partial', 'statusClass' => 'warning'],
+        ['id' => '4', 'name' => 'Classic Apparel', 'brand' => 'Classic Apparel', 'initials' => 'CA', 'contact' => '+44 20 7123 4567', 'email' => 'classic@apparel.com', 'account' => 'ACC1004', 'address' => 'London, UK', 'region' => 'europe', 'order' => '#4 · 500 Jackets', 'shipment' => 'TRK100004 · UK', 'paymentStatus' => 'Partially Paid', 'paymentKey' => 'partial', 'statusClass' => 'warning'],
+        ['id' => '5', 'name' => 'Elite Clothing', 'brand' => 'Elite Clothing', 'initials' => 'EC', 'contact' => '+33 1 4012 3456', 'email' => 'elite@clothing.com', 'account' => 'ACC1005', 'address' => 'Paris, France', 'region' => 'europe', 'order' => '#5 · 1,200 Sports Jerseys', 'shipment' => 'TRK100005 · France', 'paymentStatus' => 'Paid', 'paymentKey' => 'paid', 'statusClass' => 'success'],
+        ['id' => '6', 'name' => 'Tokyo Fashion', 'brand' => 'Tokyo Fashion', 'initials' => 'TF', 'contact' => '+81 3 1234 5678', 'email' => 'tokyo@fashion.com', 'account' => 'ACC1006', 'address' => 'Tokyo, Japan', 'region' => 'asia', 'order' => '#6 · 700 Sweatshirts', 'shipment' => 'TRK100006 · Japan', 'paymentStatus' => 'Partially Paid', 'paymentKey' => 'partial', 'statusClass' => 'warning'],
+    ];
+}
 
 require_once __DIR__ . '/../includes/header.php';
 require_once __DIR__ . '/../includes/sidebar.php';
@@ -226,7 +282,7 @@ require_once __DIR__ . '/../includes/navbar.php';
 <div class="modal fade" id="addBuyerModal" tabindex="-1" aria-labelledby="addBuyerModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content app-modal">
-            <form data-buyers-form>
+<form data-buyers-form data-backend-resource="buyer">
                 <div class="modal-header">
                     <div>
                         <p class="section-eyebrow">Buyer profile</p>

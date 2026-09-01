@@ -1,9 +1,12 @@
 <?php
-/**
- * Payments frontend prototype.
- * Static records are based on the Payment entity and its relationships
- * with Buyer, Costing, and Accounts from the supplied schema.
- */
+require_once __DIR__ . '/../config/auth.php';
+
+garments_session_start_safe();
+if (!garments_current_user()) {
+    header('Location: ../login.php');
+    exit;
+}
+
 $pageTitle = 'Payments';
 $activePage = 'payments';
 $assetBase = '../assets/';
@@ -15,10 +18,10 @@ $escape = function ($value) {
 };
 
 $paymentMetrics = [
-    ['label' => 'Total Payments', 'value' => '6', 'detail' => 'Payment records logged for August', 'icon' => 'bi-receipt', 'tone' => 'primary'],
-    ['label' => 'Total Paid', 'value' => '৳2.68M', 'detail' => 'Sum of all paid amounts', 'icon' => 'bi-cash-stack', 'tone' => 'success'],
-    ['label' => 'Total Remaining', 'value' => '৳865K', 'detail' => 'Across four partially paid orders', 'icon' => 'bi-hourglass-split', 'tone' => 'warning'],
-    ['label' => 'Payment Methods', 'value' => '4', 'detail' => 'Bank Transfer, LC, SWIFT, and Cash', 'icon' => 'bi-credit-card-2-front', 'tone' => 'indigo'],
+    ['label' => 'Total Payments', 'value' => '0', 'detail' => 'Payment records logged for August', 'icon' => 'bi-receipt', 'tone' => 'primary'],
+    ['label' => 'Total Paid', 'value' => '৳0', 'detail' => 'Sum of all paid amounts', 'icon' => 'bi-cash-stack', 'tone' => 'success'],
+    ['label' => 'Total Remaining', 'value' => '৳0', 'detail' => 'Across partially paid orders', 'icon' => 'bi-hourglass-split', 'tone' => 'warning'],
+    ['label' => 'Payment Methods', 'value' => '0', 'detail' => 'Bank Transfer, LC, SWIFT, and Cash', 'icon' => 'bi-credit-card-2-front', 'tone' => 'indigo'],
 ];
 
 $payments = [
@@ -59,6 +62,62 @@ $payments = [
         'status' => 'Partially Paid', 'statusKey' => 'partial', 'statusClass' => 'warning',
     ],
 ];
+
+$conn = garments_db_connect();
+if ($conn) {
+    $totalPayments = garments_db_fetch_one('SELECT COUNT(*) AS total FROM Payment');
+    $totalPaid = garments_db_fetch_one('SELECT NVL(SUM(Paid_Amount), 0) AS total FROM Payment');
+    $totalRemaining = garments_db_fetch_one('SELECT NVL(SUM(Remaining_Amount), 0) AS total FROM Payment');
+    $paymentMethods = garments_db_fetch_one('SELECT COUNT(DISTINCT Payment_Method) AS total FROM Payment');
+
+    $paymentMetrics[0]['value'] = (string) (int) (($totalPayments['TOTAL'] ?? 0));
+    $paymentMetrics[1]['value'] = '৳' . number_format((float) ($totalPaid['TOTAL'] ?? 0), 2, '.', ',');
+    $paymentMetrics[2]['value'] = '৳' . number_format((float) ($totalRemaining['TOTAL'] ?? 0), 2, '.', ',');
+    $paymentMetrics[3]['value'] = (string) (int) (($paymentMethods['TOTAL'] ?? 0));
+
+    $paymentSql = "
+        SELECT
+            p.Payment_ID AS id,
+            rbo.Order_ID AS order_id,
+            b.Name AS buyer_name,
+            p.Total_Amount AS total_amount,
+            p.Paid_Amount AS paid_amount,
+            p.Remaining_Amount AS remaining_amount,
+            p.Payment_Method AS payment_method,
+            TO_CHAR(p.Payment_Date, 'DD Mon YYYY') AS payment_date,
+            CASE WHEN p.Remaining_Amount = 0 THEN 'Paid' ELSE 'Partially Paid' END AS status,
+            CASE WHEN p.Remaining_Amount = 0 THEN 'paid' ELSE 'partial' END AS status_key,
+            CASE WHEN p.Remaining_Amount = 0 THEN 'success' ELSE 'warning' END AS status_class,
+            LOWER(REPLACE(p.Payment_Method, ' ', '-')) AS method_key
+        FROM Payment p
+        LEFT JOIN Rel_Buyer_Payment rbp ON rbp.Payment_ID = p.Payment_ID
+        LEFT JOIN Buyer b ON b.Buyer_ID = rbp.Buyer_ID
+        LEFT JOIN Rel_Buyer_Order rbo ON rbo.Buyer_ID = b.Buyer_ID
+        ORDER BY p.Payment_ID
+    ";
+
+    $dbPayments = garments_db_fetch_all($paymentSql);
+    if (!empty($dbPayments)) {
+        $payments = [];
+        foreach ($dbPayments as $row) {
+            $payments[] = [
+                'id' => (string) ($row['ID'] ?? ''),
+                'orderId' => (string) ($row['ORDER_ID'] ?? ''),
+                'buyerName' => (string) ($row['BUYER_NAME'] ?? 'N/A'),
+                'buyerKey' => strtolower((string) ($row['BUYER_NAME'] ?? 'n-a')),
+                'totalAmount' => (string) ($row['TOTAL_AMOUNT'] ?? '0'),
+                'paidAmount' => (string) ($row['PAID_AMOUNT'] ?? '0'),
+                'remainingAmount' => (string) ($row['REMAINING_AMOUNT'] ?? '0'),
+                'paymentMethod' => (string) ($row['PAYMENT_METHOD'] ?? 'N/A'),
+                'methodKey' => (string) ($row['METHOD_KEY'] ?? 'n-a'),
+                'date' => (string) ($row['PAYMENT_DATE'] ?? 'N/A'),
+                'status' => (string) ($row['STATUS'] ?? 'Paid'),
+                'statusKey' => (string) ($row['STATUS_KEY'] ?? 'paid'),
+                'statusClass' => (string) ($row['STATUS_CLASS'] ?? 'success'),
+            ];
+        }
+    }
+}
 
 require_once __DIR__ . '/../includes/header.php';
 require_once __DIR__ . '/../includes/sidebar.php';
@@ -222,7 +281,7 @@ require_once __DIR__ . '/../includes/navbar.php';
 <div class="modal fade" id="addPaymentModal" tabindex="-1" aria-labelledby="addPaymentModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content app-modal">
-            <form data-payments-form>
+<form data-payments-form data-backend-resource="payment">
                 <div class="modal-header">
                     <div>
                         <p class="section-eyebrow">Financials</p>

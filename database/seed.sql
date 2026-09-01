@@ -477,25 +477,25 @@ INSERT INTO Rel_Worker_ProductionStage VALUES (202,5);
 INSERT INTO Rel_Worker_ProductionStage VALUES (203,6);
 
 -------------------------------------------------
--- REL_INCHARGE_WORKER_PRODUCTIONSTAGE
+-- Rel_Inch_Worker_Stage
 -------------------------------------------------
 
-INSERT INTO Rel_Incharge_Worker_ProductionStage
+INSERT INTO Rel_Inch_Worker_Stage
 VALUES (101,201,1,'Completed');
 
-INSERT INTO Rel_Incharge_Worker_ProductionStage
+INSERT INTO Rel_Inch_Worker_Stage
 VALUES (102,202,2,'70% Complete');
 
-INSERT INTO Rel_Incharge_Worker_ProductionStage
+INSERT INTO Rel_Inch_Worker_Stage
 VALUES (103,203,3,'Completed');
 
-INSERT INTO Rel_Incharge_Worker_ProductionStage
+INSERT INTO Rel_Inch_Worker_Stage
 VALUES (101,201,4,'Pending');
 
-INSERT INTO Rel_Incharge_Worker_ProductionStage
+INSERT INTO Rel_Inch_Worker_Stage
 VALUES (102,202,5,'Pending');
 
-INSERT INTO Rel_Incharge_Worker_ProductionStage
+INSERT INTO Rel_Inch_Worker_Stage
 VALUES (103,203,6,'Pending');
 
 -------------------------------------------------

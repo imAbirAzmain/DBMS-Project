@@ -197,7 +197,7 @@ require_once __DIR__ . '/../includes/navbar.php';
 <div class="modal fade" id="addMaterialModal" tabindex="-1" aria-labelledby="addMaterialModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content app-modal">
-            <form data-materials-form>
+<form data-materials-form data-backend-resource="material">
                 <div class="modal-header">
                     <div>
                         <p class="section-eyebrow">Material management</p>

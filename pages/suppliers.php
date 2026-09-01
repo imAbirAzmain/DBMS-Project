@@ -226,7 +226,7 @@ require_once __DIR__ . '/../includes/navbar.php';
 <div class="modal fade" id="addSupplierModal" tabindex="-1" aria-labelledby="addSupplierModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content app-modal">
-            <form data-suppliers-form>
+<form data-suppliers-form data-backend-resource="supplier">
                 <div class="modal-header">
                     <div>
                         <p class="section-eyebrow">Supplier profile</p>

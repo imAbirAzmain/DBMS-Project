@@ -439,11 +439,11 @@ CREATE TABLE Rel_Worker_ProductionStage
 );
 
 --------------------------------------------------------
--- 2. REL_INCHARGE_WORKER_PRODUCTIONSTAGE
+-- 2. Rel_Inch_Worker_Stage
 -- (Aggregation Relationship)
 --------------------------------------------------------
 
-CREATE TABLE Rel_Incharge_Worker_ProductionStage
+CREATE TABLE Rel_Inch_Worker_Stage
 (
     Incharge_ID         NUMBER(5),
     Worker_ID           NUMBER(5),

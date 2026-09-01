@@ -199,7 +199,7 @@ require_once __DIR__ . '/../includes/navbar.php';
 <div class="modal fade" id="addOrderStyleModal" tabindex="-1" aria-labelledby="addOrderStyleModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content app-modal">
-            <form data-order-styles-form>
+<form data-order-styles-form data-backend-resource="order_style">
                 <div class="modal-header">
                     <div>
                         <p class="section-eyebrow">Weak entity record</p>

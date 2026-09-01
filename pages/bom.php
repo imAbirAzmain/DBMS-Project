@@ -216,7 +216,7 @@ require_once __DIR__ . '/../includes/navbar.php';
 <div class="modal fade" id="addBomModal" tabindex="-1" aria-labelledby="addBomModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content app-modal">
-            <form data-bom-form>
+<form data-bom-form data-backend-resource="bom">
                 <div class="modal-header">
                     <div>
                         <p class="section-eyebrow">Materials planning</p>

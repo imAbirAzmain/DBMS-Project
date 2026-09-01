@@ -6,6 +6,9 @@
 $activePage = isset($activePage) && is_string($activePage) ? $activePage : 'dashboard';
 $pageBase = isset($pageBase) && is_string($pageBase) ? $pageBase : '';
 $rootBase = isset($rootBase) && is_string($rootBase) ? $rootBase : '../';
+$sidebarUserName = $garmentsUserName ?? 'User';
+$sidebarUserRole = $garmentsUserRoleLabel ?? 'Factory Admin';
+$sidebarUserInitials = $garmentsUserInitials ?? 'U';
 
 $sidebarItems = [
     ['key' => 'dashboard', 'label' => 'Dashboard', 'icon' => 'bi-grid-1x2-fill', 'path' => 'dashboard.php'],
@@ -24,6 +27,7 @@ $sidebarItems = [
     ['key' => 'suppliers', 'label' => 'Suppliers', 'icon' => 'bi-truck-flatbed', 'path' => 'suppliers.php'],
     ['key' => 'payments', 'label' => 'Payments', 'icon' => 'bi-credit-card', 'path' => 'payments.php'],
     ['key' => 'accounts', 'label' => 'Accounts', 'icon' => 'bi-bank', 'path' => 'accounts.php'],
+    ['key' => 'advanced-features', 'label' => 'Advanced DB Features', 'icon' => 'bi-database-check', 'path' => 'advanced_reports.php'],
     ['key' => 'bom', 'label' => 'BOM', 'icon' => 'bi-receipt-cutoff', 'path' => 'bom.php'],
 ];
 ?>
@@ -64,10 +68,10 @@ $sidebarItems = [
 
     <div class="sidebar-footer">
         <div class="sidebar-user">
-            <span class="sidebar-user__avatar">RA</span>
+            <span class="sidebar-user__avatar" aria-hidden="true"><?= htmlspecialchars($sidebarUserInitials, ENT_QUOTES, 'UTF-8'); ?></span>
             <span>
-                <strong>Rahim Ahmed</strong>
-                <small>Factory Admin</small>
+                <strong><?= htmlspecialchars($sidebarUserName, ENT_QUOTES, 'UTF-8'); ?></strong>
+                <small><?= htmlspecialchars($sidebarUserRole, ENT_QUOTES, 'UTF-8'); ?></small>
             </span>
         </div>
         <a class="sidebar-logout" href="<?= htmlspecialchars($rootBase, ENT_QUOTES, 'UTF-8'); ?>logout.php">

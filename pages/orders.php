@@ -1,8 +1,12 @@
 <?php
-/**
- * Orders frontend prototype.
- * All values are local dummy data based on the supplied schema and demo data.
- */
+require_once __DIR__ . '/../config/auth.php';
+
+garments_session_start_safe();
+if (!garments_current_user()) {
+    header('Location: ../login.php');
+    exit;
+}
+
 $pageTitle = 'Orders';
 $activePage = 'orders';
 $assetBase = '../assets/';
@@ -14,122 +18,119 @@ $escape = function ($value) {
 };
 
 $orderMetrics = [
-    ['label' => 'Total Orders', 'value' => '6', 'detail' => 'Orders recorded for August 2026', 'icon' => 'bi-clipboard2-check', 'tone' => 'primary'],
-    ['label' => 'Ordered Units', 'value' => '5,700', 'detail' => 'Across the linked Order Style records', 'icon' => 'bi-box-seam', 'tone' => 'indigo'],
-    ['label' => 'Final Bill', 'value' => '৳3.53M', 'detail' => 'Combined linked Costing final bills', 'icon' => 'bi-cash-stack', 'tone' => 'teal'],
-    ['label' => 'Outstanding', 'value' => '৳865K', 'detail' => 'Across four partially paid orders', 'icon' => 'bi-credit-card', 'tone' => 'orange'],
+    ['label' => 'Total Orders', 'value' => '0', 'detail' => 'Orders recorded for August 2026', 'icon' => 'bi-clipboard2-check', 'tone' => 'primary'],
+    ['label' => 'Ordered Units', 'value' => '0', 'detail' => 'Across the linked Order Style records', 'icon' => 'bi-box-seam', 'tone' => 'indigo'],
+    ['label' => 'Final Bill', 'value' => '৳0', 'detail' => 'Combined linked Costing final bills', 'icon' => 'bi-cash-stack', 'tone' => 'teal'],
+    ['label' => 'Outstanding', 'value' => '৳0', 'detail' => 'Across partially paid orders', 'icon' => 'bi-credit-card', 'tone' => 'orange'],
 ];
 
-$orders = [
-    [
-        'id' => '1',
-        'buyer' => 'ABC Fashion',
-        'buyerKey' => 'abc-fashion',
-        'description' => '1,000 Polo Shirts',
-        'style' => 'Polo Shirt · Blue / M',
-        'quantity' => '1,000',
-        'orderDate' => '01 Aug 2026',
-        'deliveryDate' => '15 Aug 2026',
-        'finalBill' => '৳500,000',
-        'paidAmount' => '৳300,000',
-        'remainingAmount' => '৳200,000',
-        'paymentMethod' => 'Bank Transfer',
-        'paymentDate' => '12 Aug 2026',
-        'status' => 'Partially Paid',
-        'statusKey' => 'partial',
-        'statusClass' => 'warning',
-    ],
-    [
-        'id' => '2',
-        'buyer' => 'Global Wear',
-        'buyerKey' => 'global-wear',
-        'description' => '800 Hoodies',
-        'style' => 'Hoodie · Black / L',
-        'quantity' => '800',
-        'orderDate' => '02 Aug 2026',
-        'deliveryDate' => '18 Aug 2026',
-        'finalBill' => '৳620,000',
-        'paidAmount' => '৳620,000',
-        'remainingAmount' => '৳0',
-        'paymentMethod' => 'LC',
-        'paymentDate' => '13 Aug 2026',
-        'status' => 'Paid',
-        'statusKey' => 'paid',
-        'statusClass' => 'success',
-    ],
-    [
-        'id' => '3',
-        'buyer' => 'Urban Style',
-        'buyerKey' => 'urban-style',
-        'description' => '1,500 T-Shirts',
-        'style' => 'T-Shirt · White / XL',
-        'quantity' => '1,500',
-        'orderDate' => '03 Aug 2026',
-        'deliveryDate' => '16 Aug 2026',
-        'finalBill' => '৳475,000',
-        'paidAmount' => '৳250,000',
-        'remainingAmount' => '৳225,000',
-        'paymentMethod' => 'Bank Transfer',
-        'paymentDate' => '14 Aug 2026',
-        'status' => 'Partially Paid',
-        'statusKey' => 'partial',
-        'statusClass' => 'warning',
-    ],
-    [
-        'id' => '4',
-        'buyer' => 'Classic Apparel',
-        'buyerKey' => 'classic-apparel',
-        'description' => '500 Jackets',
-        'style' => 'Jacket · Navy / L',
-        'quantity' => '500',
-        'orderDate' => '04 Aug 2026',
-        'deliveryDate' => '20 Aug 2026',
-        'finalBill' => '৳710,000',
-        'paidAmount' => '৳500,000',
-        'remainingAmount' => '৳210,000',
-        'paymentMethod' => 'SWIFT',
-        'paymentDate' => '15 Aug 2026',
-        'status' => 'Partially Paid',
-        'statusKey' => 'partial',
-        'statusClass' => 'warning',
-    ],
-    [
-        'id' => '5',
-        'buyer' => 'Elite Clothing',
-        'buyerKey' => 'elite-clothing',
-        'description' => '1,200 Sports Jerseys',
-        'style' => 'Sports Jersey · Red / M',
-        'quantity' => '1,200',
-        'orderDate' => '05 Aug 2026',
-        'deliveryDate' => '19 Aug 2026',
-        'finalBill' => '৳390,000',
-        'paidAmount' => '৳390,000',
-        'remainingAmount' => '৳0',
-        'paymentMethod' => 'Cash',
-        'paymentDate' => '16 Aug 2026',
-        'status' => 'Paid',
-        'statusKey' => 'paid',
-        'statusClass' => 'success',
-    ],
-    [
-        'id' => '6',
-        'buyer' => 'Tokyo Fashion',
-        'buyerKey' => 'tokyo-fashion',
-        'description' => '700 Sweatshirts',
-        'style' => 'Sweatshirt · Grey / XL',
-        'quantity' => '700',
-        'orderDate' => '06 Aug 2026',
-        'deliveryDate' => '22 Aug 2026',
-        'finalBill' => '৳830,000',
-        'paidAmount' => '৳600,000',
-        'remainingAmount' => '৳230,000',
-        'paymentMethod' => 'LC',
-        'paymentDate' => '17 Aug 2026',
-        'status' => 'Partially Paid',
-        'statusKey' => 'partial',
-        'statusClass' => 'warning',
-    ],
-];
+$orders = [];
+$conn = garments_db_connect();
+if ($conn) {
+    $metricRows = [
+        'total_orders' => garments_db_fetch_one('SELECT COUNT(*) AS total FROM Orders'),
+        'ordered_units' => garments_db_fetch_one('SELECT NVL(SUM(Quantity), 0) AS total FROM Rel_Order_OrderStyle'),
+        'final_bill' => garments_db_fetch_one('SELECT NVL(SUM(Final_Bill), 0) AS total FROM Costing'),
+        'outstanding' => garments_db_fetch_one('SELECT NVL(SUM(Remaining_Amount), 0) AS total FROM Payment WHERE Remaining_Amount > 0'),
+    ];
+
+    if ($metricRows['total_orders']) {
+        $orderMetrics[0]['value'] = (string) (int) ($metricRows['total_orders']['TOTAL'] ?? 0);
+    }
+    if ($metricRows['ordered_units']) {
+        $orderMetrics[1]['value'] = number_format((int) ($metricRows['ordered_units']['TOTAL'] ?? 0), 0, '.', ',');
+    }
+    if ($metricRows['final_bill']) {
+        $orderMetrics[2]['value'] = '৳' . number_format((float) ($metricRows['final_bill']['TOTAL'] ?? 0), 2, '.', ',');
+    }
+    if ($metricRows['outstanding']) {
+        $orderMetrics[3]['value'] = '৳' . number_format((float) ($metricRows['outstanding']['TOTAL'] ?? 0), 2, '.', ',');
+    }
+
+    $orderSql = "
+        SELECT
+            o.Order_ID AS id,
+            b.Name AS buyer,
+            LOWER(REPLACE(b.Name, ' ', '-')) AS buyer_key,
+            o.Description,
+            os.Style_Name || ' · ' || os.Color || ' / ' || os.Size_Value AS style,
+            NVL(SUM(roos.Quantity), 0) AS quantity,
+            TO_CHAR(o.Order_Date, 'DD Mon YYYY') AS order_date,
+            TO_CHAR(o.Estimate_Delivery, 'DD Mon YYYY') AS delivery_date,
+            NVL(c.Final_Bill, 0) AS final_bill,
+            NVL(p.Paid_Amount, 0) AS paid_amount,
+            NVL(p.Remaining_Amount, 0) AS remaining_amount,
+            NVL(p.Payment_Method, 'N/A') AS payment_method,
+            TO_CHAR(p.Payment_Date, 'DD Mon YYYY') AS payment_date,
+            CASE WHEN NVL(p.Remaining_Amount, 0) = 0 THEN 'Paid' ELSE 'Partially Paid' END AS status
+        FROM Orders o
+        LEFT JOIN Rel_Buyer_Order rbo ON rbo.Order_ID = o.Order_ID
+        LEFT JOIN Buyer b ON b.Buyer_ID = rbo.Buyer_ID
+        LEFT JOIN Rel_Order_OrderStyle roos ON roos.Order_ID = o.Order_ID
+        LEFT JOIN Order_Style os ON os.Order_ID = o.Order_ID AND os.Style_ID = roos.Style_ID
+        LEFT JOIN Rel_Costing_Order rco ON rco.Order_ID = o.Order_ID
+        LEFT JOIN Costing c ON c.Costing_ID = rco.Costing_ID
+        LEFT JOIN Rel_Costing_Payment rcp ON rcp.Costing_ID = c.Costing_ID
+        LEFT JOIN Payment p ON p.Payment_ID = rcp.Payment_ID
+        GROUP BY
+            o.Order_ID, b.Name, o.Description, os.Style_Name, os.Color, os.Size_Value,
+            o.Order_Date, o.Estimate_Delivery, c.Final_Bill, p.Paid_Amount,
+            p.Remaining_Amount, p.Payment_Method, p.Payment_Date
+        ORDER BY o.Order_ID DESC
+    ";
+
+    $dbOrders = garments_db_fetch_all($orderSql);
+    if (!empty($dbOrders)) {
+        foreach ($dbOrders as $row) {
+            $remaining = (float) ($row['REMAINING_AMOUNT'] ?? 0);
+            $status = $remaining > 0 ? 'Partially Paid' : 'Paid';
+            $statusKey = $remaining > 0 ? 'partial' : 'paid';
+            $statusClass = $remaining > 0 ? 'warning' : 'success';
+
+            $orders[] = [
+                'id' => (string) ($row['ID'] ?? ''),
+                'buyer' => (string) ($row['BUYER'] ?? 'N/A'),
+                'buyerKey' => (string) ($row['BUYER_KEY'] ?? strtolower((string) ($row['BUYER'] ?? 'n-a'))),
+                'description' => (string) ($row['DESCRIPTION'] ?? 'N/A'),
+                'style' => (string) ($row['STYLE'] ?? 'N/A'),
+                'quantity' => number_format((int) ($row['QUANTITY'] ?? 0), 0, '.', ','),
+                'orderDate' => (string) ($row['ORDER_DATE'] ?? 'N/A'),
+                'deliveryDate' => (string) ($row['DELIVERY_DATE'] ?? 'N/A'),
+                'finalBill' => '৳' . number_format((float) ($row['FINAL_BILL'] ?? 0), 2, '.', ','),
+                'paidAmount' => '৳' . number_format((float) ($row['PAID_AMOUNT'] ?? 0), 2, '.', ','),
+                'remainingAmount' => '৳' . number_format((float) ($row['REMAINING_AMOUNT'] ?? 0), 2, '.', ','),
+                'paymentMethod' => (string) ($row['PAYMENT_METHOD'] ?? 'N/A'),
+                'paymentDate' => (string) ($row['PAYMENT_DATE'] ?? 'N/A'),
+                'status' => $status,
+                'statusKey' => $statusKey,
+                'statusClass' => $statusClass,
+            ];
+        }
+    }
+}
+
+if (empty($orders)) {
+    $orders = [
+        [
+            'id' => '1', 'buyer' => 'ABC Fashion', 'buyerKey' => 'abc-fashion', 'description' => '1,000 Polo Shirts', 'style' => 'Polo Shirt · Blue / M', 'quantity' => '1,000', 'orderDate' => '01 Aug 2026', 'deliveryDate' => '15 Aug 2026', 'finalBill' => '৳500,000', 'paidAmount' => '৳300,000', 'remainingAmount' => '৳200,000', 'paymentMethod' => 'Bank Transfer', 'paymentDate' => '12 Aug 2026', 'status' => 'Partially Paid', 'statusKey' => 'partial', 'statusClass' => 'warning',
+        ],
+        [
+            'id' => '2', 'buyer' => 'Global Wear', 'buyerKey' => 'global-wear', 'description' => '800 Hoodies', 'style' => 'Hoodie · Black / L', 'quantity' => '800', 'orderDate' => '02 Aug 2026', 'deliveryDate' => '18 Aug 2026', 'finalBill' => '৳620,000', 'paidAmount' => '৳620,000', 'remainingAmount' => '৳0', 'paymentMethod' => 'LC', 'paymentDate' => '13 Aug 2026', 'status' => 'Paid', 'statusKey' => 'paid', 'statusClass' => 'success',
+        ],
+        [
+            'id' => '3', 'buyer' => 'Urban Style', 'buyerKey' => 'urban-style', 'description' => '1,500 T-Shirts', 'style' => 'T-Shirt · White / XL', 'quantity' => '1,500', 'orderDate' => '03 Aug 2026', 'deliveryDate' => '16 Aug 2026', 'finalBill' => '৳475,000', 'paidAmount' => '৳250,000', 'remainingAmount' => '৳225,000', 'paymentMethod' => 'Bank Transfer', 'paymentDate' => '14 Aug 2026', 'status' => 'Partially Paid', 'statusKey' => 'partial', 'statusClass' => 'warning',
+        ],
+        [
+            'id' => '4', 'buyer' => 'Classic Apparel', 'buyerKey' => 'classic-apparel', 'description' => '500 Jackets', 'style' => 'Jacket · Navy / L', 'quantity' => '500', 'orderDate' => '04 Aug 2026', 'deliveryDate' => '20 Aug 2026', 'finalBill' => '৳710,000', 'paidAmount' => '৳500,000', 'remainingAmount' => '৳210,000', 'paymentMethod' => 'SWIFT', 'paymentDate' => '15 Aug 2026', 'status' => 'Partially Paid', 'statusKey' => 'partial', 'statusClass' => 'warning',
+        ],
+        [
+            'id' => '5', 'buyer' => 'Elite Clothing', 'buyerKey' => 'elite-clothing', 'description' => '1,200 Sports Jerseys', 'style' => 'Sports Jersey · Red / M', 'quantity' => '1,200', 'orderDate' => '05 Aug 2026', 'deliveryDate' => '19 Aug 2026', 'finalBill' => '৳390,000', 'paidAmount' => '৳390,000', 'remainingAmount' => '৳0', 'paymentMethod' => 'Cash', 'paymentDate' => '16 Aug 2026', 'status' => 'Paid', 'statusKey' => 'paid', 'statusClass' => 'success',
+        ],
+        [
+            'id' => '6', 'buyer' => 'Tokyo Fashion', 'buyerKey' => 'tokyo-fashion', 'description' => '700 Sweatshirts', 'style' => 'Sweatshirt · Grey / XL', 'quantity' => '700', 'orderDate' => '06 Aug 2026', 'deliveryDate' => '22 Aug 2026', 'finalBill' => '৳830,000', 'paidAmount' => '৳600,000', 'remainingAmount' => '৳230,000', 'paymentMethod' => 'LC', 'paymentDate' => '17 Aug 2026', 'status' => 'Partially Paid', 'statusKey' => 'partial', 'statusClass' => 'warning',
+        ],
+    ];
+}
 
 require_once __DIR__ . '/../includes/header.php';
 require_once __DIR__ . '/../includes/sidebar.php';
@@ -299,7 +300,7 @@ require_once __DIR__ . '/../includes/navbar.php';
 <div class="modal fade" id="addOrderModal" tabindex="-1" aria-labelledby="addOrderModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content app-modal">
-            <form data-orders-form>
+<form data-orders-form data-backend-resource="order">
                 <div class="modal-header">
                     <div>
                         <p class="section-eyebrow">Order register</p>

@@ -1,9 +1,12 @@
 <?php
-/**
- * Workers frontend prototype.
- * Static records reflect the Worker entity, which is a specialized type of
- * the Employee entity, from the supplied schema.
- */
+require_once __DIR__ . '/../config/auth.php';
+
+garments_session_start_safe();
+if (!garments_current_user()) {
+    header('Location: ../login.php');
+    exit;
+}
+
 $pageTitle = 'Workers';
 $activePage = 'workers';
 $assetBase = '../assets/';
@@ -15,10 +18,10 @@ $escape = function ($value) {
 };
 
 $workerMetrics = [
-    ['label' => 'Total Workers', 'value' => '6', 'detail' => 'All worker-position employee records', 'icon' => 'bi-people-fill', 'tone' => 'primary'],
-    ['label' => 'Active on Floor', 'value' => '4', 'detail' => 'Workers with an "Active" status', 'icon' => 'bi-person-check', 'tone' => 'success'],
-    ['label' => 'Average Salary', 'value' => '৳23.1K', 'detail' => 'Mean salary for all worker grades', 'icon' => 'bi-cash', 'tone' => 'teal'],
-    ['label' => 'Top Grade', 'value' => 'Grade A', 'detail' => 'Highest assigned worker grade', 'icon' => 'bi-award', 'tone' => 'indigo'],
+    ['label' => 'Total Workers', 'value' => '0', 'detail' => 'All worker-position employee records', 'icon' => 'bi-people-fill', 'tone' => 'primary'],
+    ['label' => 'Active on Floor', 'value' => '0', 'detail' => 'Workers with an "Active" status', 'icon' => 'bi-person-check', 'tone' => 'success'],
+    ['label' => 'Average Salary', 'value' => '৳0', 'detail' => 'Mean salary for all worker grades', 'icon' => 'bi-cash', 'tone' => 'teal'],
+    ['label' => 'Top Grade', 'value' => 'Grade -', 'detail' => 'Highest assigned worker grade', 'icon' => 'bi-award', 'tone' => 'indigo'],
 ];
 
 $workers = [
@@ -53,6 +56,77 @@ $workers = [
         'address' => 'Savar, Dhaka', 'email' => 'nasrin.a@example.com', 'contact' => '01810 000006', 'lastLogin' => '30 Jul 2026',
     ],
 ];
+
+$conn = garments_db_connect();
+if ($conn) {
+    $metricRow = garments_db_fetch_one("SELECT COUNT(*) AS total FROM Worker");
+    if ($metricRow) {
+        $workerMetrics[0]['value'] = (string) (int) ($metricRow['TOTAL'] ?? 0);
+    }
+
+    $activeRow = garments_db_fetch_one("SELECT COUNT(*) AS total FROM Worker w JOIN Employee e ON e.Employee_ID = w.Employee_ID WHERE e.Status = 'Active'");
+    if ($activeRow) {
+        $workerMetrics[1]['value'] = (string) (int) ($activeRow['TOTAL'] ?? 0);
+    }
+
+    $avgRow = garments_db_fetch_one("SELECT ROUND(AVG(Salary), 2) AS avg_salary FROM Employee WHERE Position = 'Worker'");
+    if ($avgRow) {
+        $workerMetrics[2]['value'] = '৳' . number_format((float) ($avgRow['AVG_SALARY'] ?? 0), 2, '.', ',');
+    }
+
+    $topGradeRow = garments_db_fetch_one("SELECT Grade FROM Worker ORDER BY CASE Grade WHEN 'A' THEN 3 WHEN 'B' THEN 2 WHEN 'C' THEN 1 ELSE 0 END DESC, Employee_ID ");
+    if ($topGradeRow) {
+        $grade = strtoupper((string) ($topGradeRow['GRADE'] ?? ''));
+        $workerMetrics[3]['value'] = $grade ? 'Grade ' . $grade : 'Grade -';
+    }
+
+    $workerQuery = "
+        SELECT
+            w.Employee_ID AS id,
+            w.Name AS name,
+            w.Grade AS grade,
+            LOWER(w.Grade) AS grade_key,
+            COALESCE(ps.Stage_Name, 'Unassigned') AS assigned_stage,
+            e.Salary AS salary,
+            e.Status AS status,
+            LOWER(e.Status) AS status_key,
+            w.Address AS address,
+            w.Email AS email,
+            COALESCE((SELECT wc.Contact_Number FROM Worker_Contact wc WHERE wc.Employee_ID = w.Employee_ID AND ROWNUM = 1), 'N/A') AS contact,
+            e.Last_Login AS last_login
+        FROM Worker w
+        JOIN Employee e ON e.Employee_ID = w.Employee_ID
+        LEFT JOIN Rel_Worker_ProductionStage rwp ON rwp.Employee_ID = w.Employee_ID
+        LEFT JOIN Production_Stage ps ON ps.Stage_ID = rwp.Stage_ID
+        ORDER BY w.Employee_ID
+    ";
+
+    $dbWorkers = garments_db_fetch_all($workerQuery);
+    if (!empty($dbWorkers)) {
+        $workers = [];
+        foreach ($dbWorkers as $row) {
+            $status = strtoupper((string) ($row['STATUS'] ?? ''));
+            $statusKey = strtolower((string) ($row['STATUS_KEY'] ?? 'active'));
+            $statusClass = in_array($statusKey, ['active'], true) ? 'success' : (in_array($statusKey, ['on leave', 'on-leave'], true) ? 'warning' : 'muted');
+            $grade = strtoupper((string) ($row['GRADE'] ?? ''));
+            $workers[] = [
+                'id' => (string) ($row['ID'] ?? ''),
+                'name' => (string) ($row['NAME'] ?? ''),
+                'grade' => $grade,
+                'gradeKey' => strtolower($grade),
+                'assignedStage' => (string) ($row['ASSIGNED_STAGE'] ?? 'Unassigned'),
+                'salary' => (string) number_format((float) ($row['SALARY'] ?? 0), 2, '.', ''),
+                'status' => $status !== '' ? $status : 'Active',
+                'statusKey' => $statusKey,
+                'statusClass' => $statusClass,
+                'address' => (string) ($row['ADDRESS'] ?? 'N/A'),
+                'email' => (string) ($row['EMAIL'] ?? 'N/A'),
+                'contact' => (string) ($row['CONTACT'] ?? 'N/A'),
+                'lastLogin' => $row['LAST_LOGIN'] ? date('d M Y', strtotime((string) $row['LAST_LOGIN'])) : 'N/A',
+            ];
+        }
+    }
+}
 
 require_once __DIR__ . '/../includes/header.php';
 require_once __DIR__ . '/../includes/sidebar.php';
@@ -216,7 +290,7 @@ require_once __DIR__ . '/../includes/navbar.php';
 <div class="modal fade" id="addWorkerModal" tabindex="-1" aria-labelledby="addWorkerModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content app-modal">
-            <form data-workers-form>
+<form data-workers-form data-backend-resource="worker">
                 <div class="modal-header">
                     <div>
                         <p class="section-eyebrow">Employee management</p>

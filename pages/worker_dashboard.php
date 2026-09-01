@@ -1,8 +1,18 @@
 <?php
-/**
- * Worker dashboard frontend prototype.
- * All values are dummy data and intentionally local-only, with no database connection.
- */
+require_once __DIR__ . '/../config/auth.php';
+
+garments_session_start_safe();
+$user = garments_current_user();
+if (!$user) {
+    header('Location: ../login.php');
+    exit;
+}
+
+if (strtolower((string) ($user['role'] ?? '')) !== 'worker') {
+    header('Location: ../login.php?error=unauthorized');
+    exit;
+}
+
 $pageTitle = 'Worker Dashboard';
 $activePage = 'dashboard';
 $assetBase = '../assets/';

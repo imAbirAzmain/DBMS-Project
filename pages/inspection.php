@@ -192,7 +192,7 @@ require_once __DIR__ . '/../includes/navbar.php';
 <div class="modal fade" id="addInspectionModal" tabindex="-1" aria-labelledby="addInspectionModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content app-modal">
-            <form data-inspections-form>
+<form data-inspections-form data-backend-resource="inspection">
                 <div class="modal-header">
                     <div>
                         <p class="section-eyebrow">Quality control</p>

@@ -4,6 +4,9 @@
  * through $rootBase when the application gets a central router.
  */
 $rootBase = isset($rootBase) && is_string($rootBase) ? $rootBase : '../';
+$navbarUserName = $garmentsUserName ?? 'User';
+$navbarUserRole = $garmentsUserRoleLabel ?? 'Factory Admin';
+$navbarUserInitials = $garmentsUserInitials ?? 'U';
 ?>
 <div class="app-content">
     <header class="app-navbar">
@@ -64,10 +67,10 @@ $rootBase = isset($rootBase) && is_string($rootBase) ? $rootBase : '../';
             </div>
 
             <div class="navbar-user" aria-label="Logged in user">
-                <span class="user-avatar">RA</span>
+                <span class="user-avatar" aria-hidden="true"><?= htmlspecialchars($navbarUserInitials, ENT_QUOTES, 'UTF-8'); ?></span>
                 <span class="navbar-user__details">
-                    <strong>Rahim Ahmed</strong>
-                    <small>Factory Admin</small>
+                    <strong><?= htmlspecialchars($navbarUserName, ENT_QUOTES, 'UTF-8'); ?></strong>
+                    <small><?= htmlspecialchars($navbarUserRole, ENT_QUOTES, 'UTF-8'); ?></small>
                 </span>
             </div>
 
